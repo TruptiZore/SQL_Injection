@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security System Authentication</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+        <h1>SQL Injection</h1>
+            <p>System Authentication Required</p>
+        </header>
+
+        <main class="login-wrapper">
+            <div class="login-box">
+                <h2>Authentication</h2>
+                
+                <form id="auth-form">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required placeholder="Try: admin'#">
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required placeholder="Enter password">
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button type="button" id="btn-vuln" class="btn btn-danger">Login (Vulnerable Mode)</button>
+                        <button type="button" id="btn-sec" class="btn btn-success">Login (Secure Mode)</button>
+                    </div>
+                </form>
+                <div id="message" class="message"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const messageDiv = document.getElementById('message');
+        const btnVuln = document.getElementById('btn-vuln');
+        const btnSec = document.getElementById('btn-sec');
+
+        async function handleLogin(endpoint, isSecure) {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if(!username || !password) {
+                messageDiv.innerHTML = `<span class="error">Error: Username and Password required.</span>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    messageDiv.innerHTML = `<span class="success">✅ ${data.message} <br> Redirecting...</span>`;
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 1000);
+                } else {
+                    messageDiv.innerHTML = `<span class="error">❌ ${data.message}</span>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<span class="error">System error. Connection refused.</span>`;
+            }
+        }
+
+        btnVuln.addEventListener('click', () => handleLogin('/login', false));
+        btnSec.addEventListener('click', () => handleLogin('/secure-login', true));
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Security Control Panel</h1>
+            <p>System Monitoring & Logging</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-title">Total Secure Logins</div>
+                <div class="stat-value" id="stat-logins">0</div>
+            </div>
+            <div class="stat-card" style="border-top: 3px solid var(--accent-red);">
+                <div class="stat-title">Attacks Bypassed</div>
+                <div class="stat-value val-red" id="stat-bypassed">0</div>
+            </div>
+            <div class="stat-card" style="border-top: 3px solid var(--accent-green);">
+                <div class="stat-title">Attacks Blocked</div>
+                <div class="stat-value val-green" id="stat-blocked">0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Live System Activity</h3>
+                <button class="btn-logout" onclick="window.location.href='/'">Logout / Return</button>
+            </div>
+            <table class="logs-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Event Message</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body">
+                    <tr><td colspan="3" style="text-align: center;">Loading logs...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function fetchLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+
+                // Update Stats
+                document.getElementById('stat-logins').innerText = data.stats.totalLogins;
+                document.getElementById('stat-bypassed').innerText = data.stats.attacksBypassed;
+                document.getElementById('stat-blocked').innerText = data.stats.attacksBlocked;
+
+                // Update Table
+                const tbody = document.getElementById('logs-body');
+                tbody.innerHTML = '';
+
+                if(data.logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No activity recorded yet.</td></tr>';
+                    return;
+                }
+
+                data.logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    
+                    let badgeClass = 'badge-info';
+                    let typeText = 'INFO';
+                    
+                    if(log.type === 'attack') { badgeClass = 'badge-danger'; typeText = 'CRITICAL'; }
+                    if(log.type === 'blocked') { badgeClass = 'badge-success'; typeText = 'SECURED'; }
+                    if(log.type === 'error') { badgeClass = 'badge-danger'; typeText = 'ERROR'; }
+
+                    tr.innerHTML = `
+                        <td>${log.timestamp}</td>
+                        <td><span class="badge ${badgeClass}">${typeText}</span></td>
+                        <td class="log-type-${log.type}">${log.message}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                console.error("Failed to fetch logs:", err);
+            }
+        }
+
+        // Fetch immediately and then every 2 seconds
+        fetchLogs();
+        setInterval(fetchLogs, 2000);
+    </script>
+</body>
+</html>
